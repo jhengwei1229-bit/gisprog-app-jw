@@ -1,0 +1,18 @@
+# 金鑰與密碼：絕對不能 commit
+.env
+*.key
+*token*.txt
+secrets/
+
+# Python 暫存檔
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Jupyter 暫存檔
+.ipynb_checkpoints/
+
+# 作業系統產生的檔案
+.DS_Store
+Thumbs.db
