@@ -17,10 +17,12 @@ df = pd.read_csv(DATA_PATH, dtype={"sno": str, "act": str})
 df = df[df["act"] == "1"]  # 只看營運中的站
 
 時段們 = sorted(df["時段"].unique())
+行政區們 = ["全部"] + sorted(df["sarea"].dropna().unique())
 
 # 一般變數：要調整分析條件時，直接修改這兩個設定值。
 門檻 = 0
 時段 = 時段們[0]
+行政區 = solara.reactive(行政區們[0])
 
 
 def 各區空站比例(資料, 門檻值):
@@ -36,15 +38,20 @@ def Page():
     solara.Title("YouBike 空站觀察")
     solara.Markdown("# 臺北 YouBike 各區空站比例")
 
+    solara.Select("行政區／區域", values=行政區們, value=行政區)
+
     當時 = df[df["時段"] == 時段]
+    if 行政區.value != "全部":
+        當時 = 當時[當時["sarea"] == 行政區.value]
     表 = 各區空站比例(當時, 門檻)
+    範圍 = "全部行政區／區域" if 行政區.value == "全部" else 行政區.value
 
     圖 = px.bar(
         表,
         x="空站比例",
         y="sarea",
         orientation="h",
-        title=f"{時段}，可借車 ≤ {門檻} 算空站（只算營運中的站）",
+        title=f"{時段}，{範圍}，可借車 ≤ {門檻} 算空站（只算營運中的站）",
         labels={"sarea": "", "空站比例": "空站比例"},
     )
     # 每區給 30 px 高度，行政區名稱才不會被 Plotly 自動隔行省略；換成區數更多的縣市也適用。
