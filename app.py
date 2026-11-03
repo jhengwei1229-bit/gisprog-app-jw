@@ -28,6 +28,10 @@ AVAILABILITY_API = (
     "https://tdx.transportdata.tw/api/basic/v2/Bike/Availability/City/"
     "PingtungCounty"
 )
+TDX_TOKEN_API = (
+    "https://tdx.transportdata.tw/auth/realms/TDXConnect/"
+    "protocol/openid-connect/token"
+)
 TAIPEI_TZ = timezone(timedelta(hours=8))
 ALL_TOWNS = "屏東縣（全縣）"
 
@@ -175,14 +179,44 @@ def _load_static_data_safe() -> dict[str, Any]:
         return {"data": None, "error": str(error)}
 
 
+def _get_tdx_access_token() -> str:
+    """使用環境變數中的 TDX 憑證取得存取權杖。"""
+    client_id = os.getenv("TDX_CLIENT_ID")
+    client_secret = os.getenv("TDX_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise RuntimeError(
+            "尚未設定 TDX_CLIENT_ID 與 TDX_CLIENT_SECRET。"
+            "請在 Render 的 Environment 設定這兩個值。"
+        )
+
+    response = requests.post(
+        TDX_TOKEN_API,
+        data={
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+        },
+        timeout=25,
+    )
+    response.raise_for_status()
+    access_token = response.json().get("access_token")
+    if not access_token:
+        raise ValueError("TDX OAuth 回應中沒有 access_token。")
+    return access_token
+
+
 def _load_availability_snapshot() -> dict[str, Any]:
     """從 TDX 取得一筆車況快照，不在頁面內輪詢更新。"""
     requested_at = datetime.now(timezone.utc).astimezone(TAIPEI_TZ)
     try:
+        access_token = _get_tdx_access_token()
         response = requests.get(
             AVAILABILITY_API,
             params={"$format": "JSON"},
-            headers={"User-Agent": "Pingtung-YouBike-Snapshot-App/1.0"},
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "User-Agent": "Pingtung-YouBike-Snapshot-App/1.0",
+            },
             timeout=25,
         )
         response.raise_for_status()
