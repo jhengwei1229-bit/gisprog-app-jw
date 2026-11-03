@@ -14,6 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=user . .
 
-# HuggingFace Spaces 使用 7860 埠（README 開頭的 app_port）
-EXPOSE 7860
-CMD ["solara", "run", "app.py", "--host=0.0.0.0", "--port=7860", "--production"]
+# Render 會提供 PORT；未提供時使用 Hugging Face Spaces 的 7860 埠
+EXPOSE 7860 10000
+CMD ["sh", "-c", "solara run app.py --host=0.0.0.0 --port=${PORT:-7860} --production"]

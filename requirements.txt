@@ -3,3 +3,8 @@
 solara==1.62.1
 pandas==2.3.3
 plotly==5.24.1
+geopandas==1.2.0
+leafmap==0.64.0
+requests==2.34.2
+ipyleaflet==0.20.0
+shapely==2.2.0
